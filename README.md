@@ -10,8 +10,11 @@ docker compose up
 uv run pgadmin4
 
 # Autogenerate migration script
-alembic --config migrations/alembic.ini revision -m "create initial tables" --autogenerate
+uv run alembic --config migrations/alembic.ini revision -m "create initial tables" --autogenerate
 
 # Run migration
-alembic upgrade head --config migrations/alembic.ini
+uv run alembic --config migrations/alembic.ini upgrade head
+
+# Revert migration
+uv run alembic --config migrations/alembic.ini downgrade -1
 ```
