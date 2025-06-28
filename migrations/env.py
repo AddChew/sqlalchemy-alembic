@@ -3,9 +3,14 @@ from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import create_async_engine
 
 from alembic import context
+from sqlalchemy.engine import URL
+from urllib.parse import quote_plus
+
+from models import Base
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -20,12 +25,22 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-target_metadata = None
+target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+connection_url = URL.create(
+    drivername = "postgresql+asyncpg",
+    username = "postgres",
+    password = quote_plus("postgres"),
+    host = "localhost",
+    port = 5432,
+    database = "postgres"
+)
+schema = "mlops"
 
 
 def run_migrations_offline() -> None:
@@ -40,9 +55,9 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    engine = create_async_engine(connection_url, connect_args = {"server_settings": {"search_path": schema}})
     context.configure(
-        url=url,
+        connection=engine,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -64,13 +79,7 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
-
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
-
+    connectable = create_async_engine(connection_url, connect_args = {"server_settings": {"search_path": schema}}, poolclass=pool.NullPool)
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
