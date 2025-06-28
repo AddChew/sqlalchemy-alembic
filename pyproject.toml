@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "alembic>=1.16.2",
+    "alembic-postgresql-enum>=1.7.0",
     "asyncpg>=0.30.0",
     "pgadmin4>=9.4",
     "sqlalchemy>=2.0.41",
