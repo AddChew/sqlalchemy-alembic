@@ -3,9 +3,11 @@ import asyncio
 
 from sqlalchemy import ForeignKey
 from sqlalchemy.engine import URL
-from sqlalchemy.types import JSON, Enum
+from urllib.parse import quote_plus
 
+from sqlalchemy.types import JSON, Enum
 from typing import Dict, Any, Optional, List
+
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -42,20 +44,21 @@ class Batch(Base):
     file: Mapped["File"] = relationship(back_populates = "files")
 
 
-async def main(connection_url: str):
-    engine = create_async_engine(connection_url)
+async def main(connection_url: str, schema: str):
+    engine = create_async_engine(connection_url, connect_args = {"server_settings": {"search_path": schema}})
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        # await conn.run_sync(Base.metadata.create_all)
+        # await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
 
 
 if __name__ == "__main__":
     connection_url = URL.create(
         drivername = "postgresql+asyncpg",
         username = "postgres",
-        password = "postgres",
+        password = quote_plus("postgres"),
         host = "localhost",
         port = 5432,
         database = "postgres"
     )
-    asyncio.run(main(connection_url = connection_url))
+    schema = "mlops"
+    asyncio.run(main(connection_url = connection_url, schema = schema))
