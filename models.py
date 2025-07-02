@@ -5,7 +5,7 @@ from sqlalchemy.engine import URL
 from urllib.parse import quote_plus
 from sqlalchemy.types import JSON, Enum
 
-from sqlalchemy import ForeignKey, select
+from sqlalchemy import ForeignKey, select, delete
 from typing import Dict, Any, Optional, List, Literal
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -31,7 +31,7 @@ class File(Base):
     name: Mapped[str]
     content: Mapped[Dict[str, Any]]
     status: Mapped[str] = mapped_column(Enum(Status, name = "status"))
-    batches: Mapped[List["Batch"]] = relationship(back_populates = "file", cascade = "all, delete-orphan")
+    batches: Mapped[List["Batch"]] = relationship(back_populates = "file", cascade = "all, delete-orphan", passive_deletes = True)
 
 
 class Batch(Base):
@@ -40,8 +40,8 @@ class Batch(Base):
     id: Mapped[str] = mapped_column(primary_key = True)
     status: Mapped[str] = mapped_column(Enum(Status, name = "status"))
     results: Mapped[Optional[Dict[str, Any]]]
-    file_id: Mapped[str] = mapped_column(ForeignKey("file.id"))
-    file: Mapped["File"] = relationship(back_populates = "batches")
+    file_id: Mapped[str] = mapped_column(ForeignKey("file.id", ondelete = "CASCADE"))
+    file: Mapped["File"] = relationship(back_populates = "batches", cascade = "all")
 
 
 class AsyncSessionManager:
@@ -114,6 +114,11 @@ class AsyncSessionManager:
         async with self.session() as session:
             batch = await session.get(Batch, id, options = [joinedload(Batch.file)])
         return batch
+    
+    async def read_batches(self, ids: List[str]):
+        async with self.session() as session:
+            results = await session.execute(select(Batch.id).where(Batch.id.in_(ids)))
+        return results.scalars().all()
 
     async def update_batch(self, batch: Batch, **kwargs):
         async with self.session() as session:
@@ -126,30 +131,37 @@ class AsyncSessionManager:
 
 async def main(connection_url: str, schema: str):
     async with AsyncSessionManager(connection_url = connection_url, schema = schema) as session:
-        # Create file
-        await session.create_file(id = "1", name = "file 1", content = {"content": "1"}, status = "completed")
-        await session.create_file(id = "2", name = "file 2", content = {"content": "2"}, status = "completed")
+        async with session.session() as s:
+            await s.execute(delete(File).where(File.status == "completed"))
+            await s.commit()
 
-        # # Read file
-        # file = await session.read_file(id = "1")
-        # for batch in file.batches:
-        #     print(batch.results)
-        # file = await session.read_file(id = "2")
+        # Create file
+        # await session.create_file(id = "1", name = "file 1", content = {"content": "1"}, status = "completed")
+        # await session.create_file(id = "2", name = "file 2", content = {"content": "2"}, status = "completed")
+
+#         # # Read file
+#         # file = await session.read_file(id = "1")
+#         # for batch in file.batches:
+#         #     print(batch.results)
+#         # file = await session.read_file(id = "2")
         
 
-        # Update file
-        # updated_file = await session.update_file(file, name = "file 1 update")
+#         # Update file
+#         # updated_file = await session.update_file(file, name = "file 1 update")
 
         # Create batch
         # file = await session.read_file(id = "1")
         # batch = await session.create_batch(id = "1", status = "completed", results = {"results": "1"}, file = file)
 
-        # Read batch
-        # batch = await session.read_batch(id = "1")
-        # print(batch.file.name)
+#         # Read batch
+#         # batch = await session.read_batch(id = "1")
+#         # print(batch.file.name)
 
-        # Update batch
-        # updated_batch = await session.update_batch(batch, file = file)
+#         # Update batch
+#         # updated_batch = await session.update_batch(batch, file = file)
+
+#         ids = await session.read_batches(ids = ["1"])
+#         print(ids)
 
 
 if __name__ == "__main__":
