@@ -1,8 +1,8 @@
 """create initial tables
 
-Revision ID: b4c9e3a6bfc4
+Revision ID: 983d92f3f3f3
 Revises: 
-Create Date: 2025-06-28 17:26:50.135512
+Create Date: 2025-07-02 22:20:50.704162
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'b4c9e3a6bfc4'
+revision: str = '983d92f3f3f3'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -34,7 +34,7 @@ def upgrade() -> None:
     sa.Column('status', postgresql.ENUM('completed', 'failed', 'in_progress', name='status', create_type=False), nullable=False),
     sa.Column('results', sa.JSON(), nullable=True),
     sa.Column('file_id', sa.String(), nullable=False),
-    sa.ForeignKeyConstraint(['file_id'], ['file.id'], ),
+    sa.ForeignKeyConstraint(['file_id'], ['file.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     # ### end Alembic commands ###
