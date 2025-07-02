@@ -165,13 +165,18 @@ async def main(connection_url: str, schema: str):
 
 
 if __name__ == "__main__":
-    connection_url = URL.create(
-        drivername = "postgresql+asyncpg",
-        username = "postgres",
-        password = quote_plus("postgres"),
-        host = "localhost",
-        port = 5432,
-        database = "postgres"
-    )
-    schema = "mlops"
-    asyncio.run(main(connection_url = connection_url, schema = schema))
+    import time
+
+    time_limit = int(time.time() - 60 * 60 * 24 * 7) # use this to filter out file to delete by created_at field, should cascade to batch and request
+    print(time_limit)
+
+    # connection_url = URL.create(
+    #     drivername = "postgresql+asyncpg",
+    #     username = "postgres",
+    #     password = quote_plus("postgres"),
+    #     host = "localhost",
+    #     port = 5432,
+    #     database = "postgres"
+    # )
+    # schema = "mlops"
+    # asyncio.run(main(connection_url = connection_url, schema = schema))
