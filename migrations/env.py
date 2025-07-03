@@ -33,14 +33,18 @@ target_metadata = Base.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
-connection_url = URL.create(
-    drivername = "postgresql+asyncpg",
-    username = "postgres",
-    password = quote_plus("postgres"),
-    host = "localhost",
-    port = 5432,
-    database = "postgres"
-)
+# connection_url = URL.create(
+#     drivername = "postgresql+asyncpg",
+#     username = "postgres",
+#     password = quote_plus("postgres"),
+#     host = "localhost",
+#     port = 5432,
+#     database = "postgres"
+# )
+import os
+
+db_path = os.path.join(os.path.abspath(os.getcwd()), "test.db") 
+connection_url = f"sqlite+aiosqlite:///{db_path}"
 schema = "mlops"
 
 
@@ -80,7 +84,8 @@ async def run_async_migrations() -> None:
     and associate a connection with the context.
 
     """
-    connectable = create_async_engine(connection_url, connect_args = {"server_settings": {"search_path": schema}}, poolclass=pool.NullPool)
+    # connectable = create_async_engine(connection_url, connect_args = {"server_settings": {"search_path": schema}}, poolclass=pool.NullPool)
+    connectable = create_async_engine(connection_url)
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
 
