@@ -10,5 +10,6 @@ dependencies = [
     "alembic-postgresql-enum>=1.7.0",
     "asyncpg>=0.30.0",
     "pgadmin4>=9.4",
+    "redis>=6.2.0",
     "sqlalchemy>=2.0.41",
 ]
