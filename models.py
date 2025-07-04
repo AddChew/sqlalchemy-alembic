@@ -131,13 +131,14 @@ class AsyncSessionManager:
 
 async def main(connection_url: str, schema: str):
     async with AsyncSessionManager(connection_url = connection_url, schema = schema) as session:
-        async with session.session() as s:
-            await s.execute(delete(File).where(File.status == "completed"))
-            await s.commit()
+        # Delete files
+        # async with session.session() as s:
+        #     await s.execute(delete(File).where(File.status == "completed"))
+        #     await s.commit()
 
         # Create file
-        # await session.create_file(id = "1", name = "file 1", content = {"content": "1"}, status = "completed")
-        # await session.create_file(id = "2", name = "file 2", content = {"content": "2"}, status = "completed")
+        # file1 = await session.create_file(id = "1", name = "file 1", content = {"content": "1"}, status = "completed")
+        # file2 = await session.create_file(id = "2", name = "file 2", content = {"content": "2"}, status = "completed")
 
 #         # # Read file
 #         # file = await session.read_file(id = "1")
@@ -151,7 +152,19 @@ async def main(connection_url: str, schema: str):
 
         # Create batch
         # file = await session.read_file(id = "1")
-        # batch = await session.create_batch(id = "1", status = "completed", results = {"results": "1"}, file = file)
+        # batch1 = await session.create_batch(id = "1", status = "completed", results = {"results": "1"}, file = file1)
+        # batch2 = await session.create_batch(id = "2", status = "completed", results = {"results": "2"}, file = file1)
+        # batch3 = await session.create_batch(id = "3", status = "completed", results = {"results": "3"}, file = file2)
+
+        async with session.session() as s:
+            results = await s.execute(select(File).options(joinedload(File.batches)).where(File.id.in_(("1", "2"))))
+            files = results.unique().scalars().all()
+
+            print("Loop through files...")
+            for f in files:
+                print(f.name)
+                for batch in f.batches:
+                    print(batch.id)
 
 #         # Read batch
 #         # batch = await session.read_batch(id = "1")
@@ -165,18 +178,18 @@ async def main(connection_url: str, schema: str):
 
 
 if __name__ == "__main__":
-    import time
+    # import time
 
-    time_limit = int(time.time() - 60 * 60 * 24 * 7) # use this to filter out file to delete by created_at field, should cascade to batch and request
-    print(time_limit)
+    # time_limit = int(time.time() - 60 * 60 * 24 * 7) # use this to filter out file to delete by created_at field, should cascade to batch and request
+    # print(time_limit)
 
-    # connection_url = URL.create(
-    #     drivername = "postgresql+asyncpg",
-    #     username = "postgres",
-    #     password = quote_plus("postgres"),
-    #     host = "localhost",
-    #     port = 5432,
-    #     database = "postgres"
-    # )
-    # schema = "mlops"
-    # asyncio.run(main(connection_url = connection_url, schema = schema))
+    connection_url = URL.create(
+        drivername = "postgresql+asyncpg",
+        username = "postgres",
+        password = quote_plus("postgres"),
+        host = "localhost",
+        port = 5432,
+        database = "postgres"
+    )
+    schema = "mlops"
+    asyncio.run(main(connection_url = connection_url, schema = schema))
